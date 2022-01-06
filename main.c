@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
 		thread_data_array[t].len = strlen(&words[t]);
 		thread_data_array[t].dictionary_word = &words[t];
 		printf("Creating thread %d\n", t);
-		rc = pthread_create(&threads[t], NULL, PrintPasswd, (void*)
+		rc = pthread_create(&producer[t], NULL, PrintPasswd, (void*)
 			&thread_data_array[t]);
 		if (rc) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
