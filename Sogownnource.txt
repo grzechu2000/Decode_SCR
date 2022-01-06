@@ -1,0 +1,28 @@
+char** words;
+	words = malloc((dictionary_size) * sizeof(char*));
+
+	if (words == NULL)
+	{
+		/* we have a problem */
+		printf("Error: out of memory.\n");
+		return;
+	}
+	fp = fopen(&filename, "r");
+
+	for (i = 0; i < dictionary_size; i++)
+	{
+		
+		words[i] = malloc((30 + 1) * sizeof(char));
+		if (words[i] == NULL)
+		{
+			/* problem */
+			break;
+		}
+		printf("%s", words[i]);
+	}
+	fclose(fp);
+
+	if (i != dictionary_size)
+	{
+		/* it didn't allocate */
+	}
