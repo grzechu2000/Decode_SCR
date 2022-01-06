@@ -5,20 +5,19 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#define NUM_THREADS	3
+#define PRODUCER_NUM 3
 
 
 struct thread_data
 {
 
 	int thread_id;
-	int producer;
 	const char* cracked_paswd;
-	const char* dictionary_word;
-	int  len;
+	const char* producer_table;
+	int dictionary_length;
 };
 
-struct thread_data thread_data_array[NUM_THREADS];
+struct thread_data thread_data_array[PRODUCER_NUM];
 
 int check_letter(const char* msg)
 {
@@ -82,25 +81,23 @@ void bytes2md5(const char* data, int len, char* md5buf) {
 }
 
 
-void* PrintPasswd(void* threadarg)
-{
-	int taskid;
-	struct thread_data* my_data;
-	char buffor[33];
-
-	my_data = (struct thread_data*)threadarg;
-	bytes2md5(my_data->dictionary_word, my_data->len, buffor);
-	printf("\nThread id: %d\nProducer class: %d\n My password is : %s \n", my_data->thread_id,my_data->producer ,buffor);
-	my_data->cracked_paswd = buffor;
-	printf("\n\nMy hashed password is: %s\n\n", my_data->cracked_paswd);
-	pthread_exit(NULL);
-}
+//void* PrintPasswd(void* threadarg)
+//{
+//	int taskid;
+//	struct thread_data* my_data;
+//	char buffor[33];
+//
+//	my_data = (struct thread_data*)threadarg;
+//	bytes2md5(my_data->dictionary_word, my_data->len, buffor);
+//	printf("\nThread id: %d\nProducer class: %d\n My password is : %s \n", my_data->thread_id,my_data->producer ,buffor);
+//	my_data->cracked_paswd = buffor;
+//	printf("\n\nMy hashed password is: %s\n\n", my_data->cracked_paswd);
+//	pthread_exit(NULL);
+//}
 
 int main(int argc, char* argv[])
 {
 	FILE* fp,paswd_file;
-	pthread_t producer[NUM_THREADS], consume;
-	int* taskids[NUM_THREADS];
 	int rc, t,count;
 	char* filename;
 	char* ptr;
@@ -117,45 +114,77 @@ int main(int argc, char* argv[])
 
 	int dictionary_size = check_lines(&filename);
 
+	
 	/*Alokacja pamiêci dla s³ownika*/
 
-	char** words;
-	words = malloc((dictionary_size) * sizeof(char*));
+	char* temp_array[255];
+	char** sorted_array_0;
+	sorted_array_0 = malloc((dictionary_size) * sizeof(char*));
+	char** sorted_array_1;
+	sorted_array_1 = malloc((dictionary_size) * sizeof(char*));
+	char** sorted_array_2;
+	sorted_array_2 = malloc((dictionary_size) * sizeof(char*));
 
-	if (words == NULL)
-	{
-		/* Nie uda³o siê zaalokowaæ pamiêci */
-
-		printf("Error: out of memory.\n");
-		return;
-	}
+	//C:\Users\Grzesiek\source\repos\Decode\slownik.txt
 
 	//Dzia³a alokacja odwo³anie do wyrazów ze s³ownika robisz &words[i] lub words[i], sprwadŸ se
 
-	char* temp_array[255];
+	int sorted_array_ind[3] = { 0, 0, 0 };
+
 	fp = fopen(&filename, "r");
 
 	for (i = 0; i < dictionary_size; i++)
 	{
 		temp_array[i] = fgets(buf, 255, fp);
-		strcpy(&words[i], temp_array[i]);
+		switch (check_letter(temp_array[i]))
+		{
+		case 0:
+		{
+			strcpy(&sorted_array_0[sorted_array_ind[0]],temp_array[i]);
+			sorted_array_ind[0]++;
+			break;
+		}
+
+		case 1:
+		{
+			
+			strcpy(&sorted_array_1[sorted_array_ind[1]], temp_array[i]);
+			sorted_array_ind[1];
+			break;
+		}
+
+		case 2:
+		{
+			
+			strcpy(&sorted_array_2[sorted_array_ind[2]], temp_array[i]);
+			sorted_array_ind[2]++;
+			break;
+		}
+
+
+		default:
+			break;
+		}
 		if (temp_array[i] == NULL)
 		{
 			break;
 		}
 	}
+
 	fclose(fp);
-	/*Sprawdzanie kryteria wyrazów s³ownika i przekazania ich do producentów*/
 
 
 
-	for (t = 0; t < dictionary_size; t++)
+
+
+
+	pthread_t producer[PRODUCER_NUM], consume;
+	int* taskids[PRODUCER_NUM];
+	
+	/*for (t = 0; t < PRODUCER_NUM; t++)
 	{
-		int is_lower = check_letter(&words[t]);
-		printf("Value of functions is:%d", is_lower);
 		thread_data_array[t].thread_id = t;
-		thread_data_array[t].len = strlen(&words[t]);
-		thread_data_array[t].dictionary_word = &words[t];
+		thread_data_array[t].dictionary_length = sorted_array_ind[t];
 		printf("Creating thread %d\n", t);
 		rc = pthread_create(&producer[t], NULL, PrintPasswd, (void*)
 			&thread_data_array[t]);
@@ -164,12 +193,13 @@ int main(int argc, char* argv[])
 			exit(-1);
 
 
+		}
 	}
+	*/
 
 
 
 
-//C:\Users\Grzesiek\source\repos\Decode\slownik.txt
 
 
 	/*

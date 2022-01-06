@@ -2,12 +2,12 @@ woman
 wonder
 word
 work
-worker
+Worker
 world
 worry
-would
+Would
 write
-writer
+WRITER
 wrong
 yard
 yeah
