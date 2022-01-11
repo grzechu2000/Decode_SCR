@@ -84,45 +84,31 @@ void bytes2md5(const char* data, int len, char* md5buf) {
 	}
 }
 
-const char* add_number_front(const char* msg, int i,int word_len)
+const char* add_number_front(const char* msg, int i,int word_len,int iterator)
 {
-	int size = word_len + 2 + (i / 10);
+	int size = word_len + 2 + iterator + (i / 10);
 	char* buf = malloc(size * sizeof(char));
-
-	printf("size is: %d\n\n", size);
-	printf("wordlen is: %d\n", word_len);
-	snprintf(buf, size, "%d%s",i, msg);
-	printf("%s\n", buf); 
+	snprintf(buf, size, "%0*d%s",iterator,i, msg); 
 
 	return buf;
 	free(buf);
 }
 
-const char* add_number_back(const char* msg, int i, int word_len)
+const char* add_number_back(const char* msg, int i, int word_len,int iterator)
 {
-	int size = word_len + 2 + (i / 10);
+	int size = word_len + 2 + iterator + (i / 10);
 	char *buf = malloc(size * sizeof(char));
-
-	printf("size is: %d\n\n", size);
-	printf("wordlen is: %d\n", word_len);
-	snprintf(buf, size, "%s%d", msg, i);
-	printf("%s\n", buf);
-
+	snprintf(buf, size, "%s%0*d", msg,iterator, i);
 	return buf;
 	free(buf);
 }
 
-const char* num_combinations(const char* msg, int j,int i, int word_len)
+const char* num_combinations(const char* msg, int j,int i, int word_len,int iterator)
 {
 	//litera j i letera i odpowiednio z przodu i z ty³u litery
-	int size = word_len + 3 + (i / 10) + (j/10);
+	int size = word_len + 3 + iterator + (i / 10) + (j/10);
 	char* buf = malloc(size * sizeof(char));
-
-	printf("size is: %d\n\n", size);
-	printf("wordlen is: %d\n", word_len);
-	snprintf(buf, size, "%d%s%d",j, msg, i); 
-	printf("%s\n", buf); 
-
+	snprintf(buf, size, "%0*d%s%0*d",iterator, j, msg, iterator,i); 
 	return buf;
 	free(buf);
 }
@@ -133,6 +119,9 @@ void* PasswdCracking(void* threadarg)
 	int taskid;
 	struct thread_data* my_data;
 	char buffor[33];
+	const char* temp;
+	int iterator1 = 1;
+	int iterator2 = 1;
 	my_data = (struct thread_data*)threadarg;
 
 	printf("\nCleanup time\n");
@@ -153,36 +142,117 @@ void* PasswdCracking(void* threadarg)
 	}
 
 
-
-	for (int i = 0; i < my_data->dictionary_length; i++)
-	{
-		/*printf("My producer table: %s", &my_data->producer_table[i]);*/
-		for (int j = 0; j < my_data->password_file_length;  j++)
-		{
-			my_data->current_password = &my_data->producer_table[i];
-			my_data->current_password = &my_data->producer_table[i];
-			bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
-			my_data->hashed_password = buffor;
-			int h = strcmp(my_data->hashed_password, my_data->password_table_s[j]);
-			printf("\nValue of h is: %d\n", h);
-
-			// Comparing strings
-			if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
-			{
-				printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
-			}
-			else
-			{
-				printf("This is not my password\n");
-			}
-			
 	
+	for (int iterator1 = 1; iterator1 < 3; iterator1++)
+	{
 
+		for (int i = 0; i < my_data->dictionary_length; i++)
+		{
+			/*printf("My producer table: %s", &my_data->producer_table[i]);*/
+			for (int j = 0; j < my_data->password_file_length; j++)
+			{
+				char* special_sign = strchr(my_data->password_table_s[j], '#');
+				if (special_sign)
+				{
+					goto breakpoint;
+				}
+
+				char* special_sign_2 = strchr(&my_data->producer_table[i], '#');
+				if (special_sign_2)
+				{
+					goto breakpoint;
+				}
+		//	C:\Users\Grzesiek\source\repos\Decode\slownik.txt
+
+				my_data->current_password = &my_data->producer_table[i];
+				bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
+				my_data->hashed_password = buffor;
+				printf("\nMy current pwd: %s\n", my_data->current_password);
+				// Comparing strings
+				if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
+				{
+					printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password); 
+					// Dodawanie specjalnego znaku aby oznaczyæ scrackowane has³o
+					snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+					snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
+					break;
+				}
+
+
+				// Now checking combinations of numbers in front of strings
+				
+				for (int g = 0; g < iterator2 * 10; g++)
+				{
+					temp = add_number_front(my_data->current_password, g, strlen(my_data->current_password), iterator1);
+					my_data->current_password = temp;
+					bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
+					my_data->hashed_password = buffor;
+					printf("\nMy current pwd: %s", my_data->current_password);
+					if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
+					{
+						printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
+						snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+						snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
+						break;
+					}
+					my_data->current_password = &my_data->producer_table[i];
+
+				}
+
+				// Now checking combinations of numbers in the back of strings
+
+				for (int g = 0; g < iterator2 * 10; g++)
+				{
+					temp = add_number_back(my_data->current_password, g, strlen(my_data->current_password), iterator1);
+					my_data->current_password = temp;
+					bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
+					my_data->hashed_password = buffor;
+					printf("\nMy current pwd: %s", my_data->current_password);
+					if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
+					{
+						printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
+						snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+						snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
+						break;
+					}
+					my_data->current_password = &my_data->producer_table[i];
+
+				}
+
+				// Now checking combinations of numbers in the back of strings
+
+				for (int g = 0; g < iterator2 * 10; g++)
+				{
+					for (int h = 0; h < iterator2 * 10; h++)
+					{
+						temp = num_combinations(my_data->current_password, g, h, strlen(my_data->current_password), iterator1);
+						my_data->current_password = temp;
+						bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
+						my_data->hashed_password = buffor;
+						printf("\nMy current pwd: %s", my_data->current_password);
+						if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
+						{
+							printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
+							snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+							snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
+							break;
+						}
+						my_data->current_password = &my_data->producer_table[i];
+
+
+
+					}
+
+				}
+			breakpoint:
+				printf("\nSkipping pwd\n");
+
+			}
 		}
+		printf("\nIterator part\n");
+		iterator2 *= 10;
 
 	}
-
-
 	pthread_exit(NULL);
 }
 
