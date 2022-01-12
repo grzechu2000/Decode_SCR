@@ -21,7 +21,18 @@ struct thread_data
 	const char* hashed_password;
 };
 
+struct consumer_data
+{
+	const char** cracked_pwd_table;
+	int cracked_pwd_table_length;
+	int cracked_pwd_table_index;
+};
+
+struct consumer_data consumer;
+
 struct thread_data thread_data_array[PRODUCER_NUM];
+
+
 
 int check_letter(const char* msg)
 {
@@ -120,6 +131,7 @@ void* PasswdCracking(void* threadarg)
 	struct thread_data* my_data;
 	char buffor[33];
 	const char* temp;
+	const char* append;
 	int iterator1 = 1;
 	int iterator2 = 1;
 	my_data = (struct thread_data*)threadarg;
@@ -133,7 +145,6 @@ void* PasswdCracking(void* threadarg)
 			*newline = '\0';
 	}
 
-
 	for (int i = 0; i < my_data->password_file_length; i++)
 	{
 		char* newline = strchr(my_data->password_table_s[i], '\n');
@@ -143,22 +154,15 @@ void* PasswdCracking(void* threadarg)
 
 
 	
-	for (int iterator1 = 1; iterator1 < 3; iterator1++)
+	for (int iterator1 = 1; iterator1 < 2; iterator1++)
 	{
 
 		for (int i = 0; i < my_data->dictionary_length; i++)
 		{
-			/*printf("My producer table: %s", &my_data->producer_table[i]);*/
 			for (int j = 0; j < my_data->password_file_length; j++)
 			{
 				char* special_sign = strchr(my_data->password_table_s[j], '#');
 				if (special_sign)
-				{
-					goto breakpoint;
-				}
-
-				char* special_sign_2 = strchr(&my_data->producer_table[i], '#');
-				if (special_sign_2)
 				{
 					goto breakpoint;
 				}
@@ -167,19 +171,18 @@ void* PasswdCracking(void* threadarg)
 				my_data->current_password = &my_data->producer_table[i];
 				bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
 				my_data->hashed_password = buffor;
-				printf("\nMy current pwd: %s\n", my_data->current_password);
+				//printf("\nMy current pwd: %s\n", my_data->current_password);
 				// Comparing strings
 				if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
 				{
-					printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password); 
-					// Dodawanie specjalnego znaku aby oznaczyæ scrackowane has³o
-					snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
-					snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
-					break;
+					snprintf(my_data->password_table_s[j], strlen(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+					strcpy(&consumer.cracked_pwd_table[consumer.cracked_pwd_table_index], my_data->current_password);
+					consumer.cracked_pwd_table_index++;
+
 				}
 
 
-				// Now checking combinations of numbers in front of strings
+				 //Now checking combinations of numbers in front of strings
 				
 				for (int g = 0; g < iterator2 * 10; g++)
 				{
@@ -187,13 +190,12 @@ void* PasswdCracking(void* threadarg)
 					my_data->current_password = temp;
 					bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
 					my_data->hashed_password = buffor;
-					printf("\nMy current pwd: %s", my_data->current_password);
+					//printf("\nMy current pwd: %s", my_data->current_password);
 					if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
 					{
-						printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
-						snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
-						snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
-						break;
+						snprintf(my_data->password_table_s[j], strlen(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+						strcpy(&consumer.cracked_pwd_table[consumer.cracked_pwd_table_index], my_data->current_password);
+						consumer.cracked_pwd_table_index++;
 					}
 					my_data->current_password = &my_data->producer_table[i];
 
@@ -207,16 +209,15 @@ void* PasswdCracking(void* threadarg)
 					my_data->current_password = temp;
 					bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
 					my_data->hashed_password = buffor;
-					printf("\nMy current pwd: %s", my_data->current_password);
+					//printf("\nMy current pwd: %s", my_data->current_password);
 					if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
 					{
-						printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
-						snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
-						snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
-						break;
+						snprintf(my_data->password_table_s[j], strlen(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+						strcpy(&consumer.cracked_pwd_table[consumer.cracked_pwd_table_index], my_data->current_password);
+						consumer.cracked_pwd_table_index++;
 					}
 					my_data->current_password = &my_data->producer_table[i];
-
+				
 				}
 
 				// Now checking combinations of numbers in the back of strings
@@ -229,13 +230,12 @@ void* PasswdCracking(void* threadarg)
 						my_data->current_password = temp;
 						bytes2md5(my_data->current_password, strlen(my_data->current_password), buffor);
 						my_data->hashed_password = buffor;
-						printf("\nMy current pwd: %s", my_data->current_password);
+						//printf("\nMy current pwd: %s", my_data->current_password);
 						if (strcmp(my_data->hashed_password, my_data->password_table_s[j]) == 0)
 						{
-							printf("CONGRATULATIUONS This is my password: %s\n", my_data->current_password);
-							snprintf(my_data->password_table_s[j], sizeof(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
-							snprintf(&my_data->producer_table[i], sizeof(&my_data->producer_table[i]) + 1, "#%s", &my_data->producer_table[i]);
-							break;
+							snprintf(my_data->password_table_s[j], strlen(my_data->password_table_s[j]) + 1, "#%s", my_data->password_table_s[j]);
+							strcpy(&consumer.cracked_pwd_table[consumer.cracked_pwd_table_index], my_data->current_password);
+							consumer.cracked_pwd_table_index++;
 						}
 						my_data->current_password = &my_data->producer_table[i];
 
@@ -244,19 +244,41 @@ void* PasswdCracking(void* threadarg)
 					}
 
 				}
+				
 			breakpoint:
-				printf("\nSkipping pwd\n");
+				printf("");
 
 			}
 		}
-		printf("\nIterator part\n");
 		iterator2 *= 10;
 
 	}
 	pthread_exit(NULL);
 }
 
+void* Consumer(void* consumer_arg)
+{
+	struct consumer_data* data;
+	data = (struct consumer_data*)consumer_arg;
+	while (1)
+	{
+		for (int j = 0; j < data->cracked_pwd_table_index; j++)
+		{
+			char* newline = strchr(&data->cracked_pwd_table[j], '/');
+			if (!newline)
+			{
+				printf("\nCracked password: %s\n", &data->cracked_pwd_table[j]);
+				snprintf(&data->cracked_pwd_table[j], strlen(&data->cracked_pwd_table[j]) + 2, "/%s", &data->cracked_pwd_table[j]);
+			}
+		}
+	}
+	
 
+	
+
+
+	pthread_exit(NULL);
+}
 
 int main(int argc, char* argv[])
 {
@@ -272,19 +294,12 @@ int main(int argc, char* argv[])
 	char* temp_array[255];
 	char* temp_password_array[255];
 
-
-	//const char* test = "woman";
-	//char md5[33]; // 32 characters + null terminator
-	//bytes2md5(test, strlen(test), md5);
-	//printf("%s ======================> %s\n", test, md5);
-	//printf("sizeofstring: %d", strlen(test));
 	// Jak chcesz sparametryzowaæ liczbê 0 z przodu do dajesz w printf %0*d, i potem w parametrach printfa pierwszy parametr to gwiazdka
 
 
 	printf("Please put in password filename: ");
 	scanf("%s", &password_file_name);
 	printf("Dictionary filename: %s", &password_file_name);
-	
 	
 	int password_file_size = check_lines(&password_file_name);
 	char** password_table;
@@ -304,23 +319,26 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
-	
-	//Dziemki dzia³a
-	
-	/*for (int j = 0; j < password_file_size; j++)
+
+	fclose(password_file);
+
+	char** consumer_table;
+	consumer_table = malloc((password_file_size) * sizeof(char*));
+
+	password_file = fopen(&password_file_name, "r");
+
+	for (i = 0; i < password_file_size; i++)
 	{
-		printf("Table of pwd: %s\n", password_table[j]);
+		consumer_table[i] = malloc((33) * sizeof(char));
+
+
+		if (consumer_table[i] == NULL)
+		{
+			break;
+		}
 	}
-	fclose(password_file);*/
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	fclose(password_file);
 	/*Wprowadzenie filepath s³ownika oraz sprawdzenie iloœci wyrazów */
 	
 	printf("Please put in dictionary filename: ");
@@ -342,7 +360,6 @@ int main(int argc, char* argv[])
 	
 	//C:\Users\Grzesiek\source\repos\Decode\slownik.txt
 	
-	//Dzia³a alokacja odwo³anie do wyrazów ze s³ownika robisz &words[i] lub words[i], sprwadŸ se
 	
 	int sorted_array_ind[3] = { 0, 0, 0 };
 	
@@ -401,25 +418,11 @@ int main(int argc, char* argv[])
 
 	pthread_t producer[PRODUCER_NUM], consume;
 	int* taskids[PRODUCER_NUM];
-	// Do tego momentu git, przy przekazywaniu jakieœ gówno
 	// Przy przekazywaniu musisz mieæ cons char** tablica
 	const char** mytable = sortedarray[0];
 
-	/*for (int i = 0; i < sorted_array_ind[0]; i++)
-	{
-		printf("Table to pass: %s\n", &mytable[i]);
-	}
-	
-	
-	char** pwdbby = password_table;
-	
-	for (int i = 0; i < password_file_size; i++)
-	{
-		printf("Passwords to pass: %s\n",pwdbby[i] );
-	}*/
 
-
-	for (t = 0; t < 1; t++)
+	for (t = 0; t < PRODUCER_NUM; t++)
 	{
 		thread_data_array[t].thread_id = t;
 		thread_data_array[t].password_table_s = password_table;
@@ -427,8 +430,7 @@ int main(int argc, char* argv[])
 		thread_data_array[t].producer_table = sortedarray[t];
 		thread_data_array[t].dictionary_length = sorted_array_ind[t];
 		printf("Creating thread %d\n", t);
-		rc = pthread_create(&producer[t], NULL, PasswdCracking, (void*)
-			&thread_data_array[t]);
+		rc = pthread_create(&producer[t], NULL, PasswdCracking, (void*) &thread_data_array[t]);
 		if (rc) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
 			exit(-1);
@@ -436,9 +438,16 @@ int main(int argc, char* argv[])
 
 		}
 	}
-
+	consumer.cracked_pwd_table = consumer_table;
+	consumer.cracked_pwd_table_length = password_file_size;
+	consumer.cracked_pwd_table_index=0;
+	rc = pthread_create(&consume, NULL, Consumer, (void*) &consumer);
+	if (rc) {
+		printf("ERROR; return code from pthread_create() is %d\n", rc);
+		exit(-1);
+	}
 	pthread_exit(NULL);
-
+	
 
 
 	return 0;
